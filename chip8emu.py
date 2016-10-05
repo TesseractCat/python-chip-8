@@ -176,10 +176,10 @@ def do_cycle():
         v[0xF] = 0
 
         for y in range(0, height):
-            pixel = memory[i + y]
+            row = memory[i + y]
             for x in range(0,8):
-                try: pix = int("{0:b}".format(pixel)[x])
-                except: pix = 0
+                try: pixel = int("{0:b}".format(row)[x])
+                except: pixel = 0
 
                 #if pix == 1:
                     #print("SETTING SPRITE PIXEL AT: {} {} {}".format(x, y, height))
@@ -187,7 +187,7 @@ def do_cycle():
                 try:
                     if gfx[co_x + x][co_y + y] == 1:
                         v[0xF] = 1
-                    gfx[co_x + x][co_y + y] ^= pix #int(bin(pixel)[2+x])
+                    gfx[co_x + x][co_y + y] ^= pixel #int(bin(pixel)[2+x])
                 except:
                     pass
         
