@@ -43,7 +43,10 @@ def do_cycle():
     global key
     
     opcode = memory[pc] << 8 | memory[pc + 1]
+    temp_vx = (opcode & 0x0F00) >> 8
+    temp_vy = (opcode & 0x00F0) >> 4
 
+    
     #print("Running opcode: " + hex(opcode))
     
     if opcode == 0x00E0:
@@ -65,87 +68,87 @@ def do_cycle():
         pc = opcode & 0x0FFF
     elif opcode & 0xF000 == 0x3000:
         #3XNN	Skips the next instruction if VX equals NN.
-        if v[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF):
+        if v[temp_vx] == (opcode & 0x00FF):
             pc += 4
         else:
             pc += 2
     elif opcode & 0xF000 == 0x4000:
         #4XNN	Skips the next instruction if VX doesn't equal NN.
-        if v[(opcode & 0x0F00) >> 8] != 0x00FF:
+        if v[temp_vx] != 0x00FF:
             pc += 4
         else:
             pc += 2
     elif opcode & 0xF000 == 0x5000:
         #5XY0	Skips the next instruction if VX equals VY.
-        if v[(opcode & 0x0F00) >> 8] == v[(opcode & 0x00F0) >> 4]:
+        if v[temp_vx] == v[temp_vy]:
             pc += 4
         else:
             pc += 2
     elif opcode & 0xF000 == 0x6000:
         #6XNN	Sets VX to NN.
-        v[(opcode & 0x0F00) >> 8] = opcode & 0x00FF
+        v[temp_vx] = opcode & 0x00FF
         pc += 2
     elif opcode & 0xF000 == 0x7000:
         #7XNN	Adds NN to VX.
-        v[(opcode & 0x0F00) >> 8] = v[(opcode & 0x0F00) >> 8] + (opcode & 0x00FF)
+        v[temp_vx] = v[temp_vx] + (opcode & 0x00FF)
         pc += 2
     elif opcode & 0xF00F == 0x8000:
         #8XY0	Sets VX to the value of VY.
-        v[(opcode & 0x0F00) >> 8] = v[(opcode & 0x00F0) >> 4]
+        v[temp_vx] = v[temp_vy]
         pc += 2
     elif opcode & 0xF00F == 0x8001:
         #8XY1	Sets VX to VX or VY.
-        v[(opcode & 0x0F00) >> 8] = v[(opcode & 0x0F00) >> 8] | v[(opcode & 0x00F0) >> 4]
+        v[temp_vx] = v[temp_vx] | v[temp_vy]
         pc += 2
     elif opcode & 0xF00F == 0x8002:
         #8XY2	Sets VX to VX and VY.
-        v[(opcode & 0x0F00) >> 8] = v[(opcode & 0x0F00) >> 8] & v[(opcode & 0x00F0) >> 4]
+        v[temp_vx] = v[temp_vx] & v[temp_vy]
         pc += 2
     elif opcode & 0xF00F == 0x8003:
         #8XY3	Sets VX to VX xor VY.
-        v[(opcode & 0x0F00) >> 8] = v[(opcode & 0x0F00) >> 8] ^ v[(opcode & 0x00F0) >> 4]
+        v[temp_vx] = v[temp_vx] ^ v[temp_vy]
         pc += 2
     elif opcode & 0xF00F == 0x8004:
         #8XY4	Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't. -- IF IT DOESN'T WORK CHECK FORUM POST
-        temp = v[(opcode & 0x0F00) >> 8] + v[(opcode & 0x00F0) >> 4]
+        temp = v[temp_vx] + v[temp_vy]
         if temp > 255:
-            v[(opcode & 0x0F00) >> 8] = temp - 256
+            v[temp_vx] = temp - 256
             v[0xF] = 1
         else:
-            v[(opcode & 0x0F00) >> 8] = temp
+            v[temp_vx] = temp
             v[0xF] = 0
         pc += 2
     elif opcode & 0xF00F == 0x8005:
         #8XY5	VY is subtracted from VX. VF is set to 0 when there's a borrow, and 1 when there isn't. -- IF IT DOESN'T WORK CHECK FORUM POST
-        temp = v[(opcode & 0x0F00) >> 8] - v[(opcode & 0x00F0) >> 4]
+        temp = v[temp_vx] - v[temp_vy]
         if temp < 0:
-            v[(opcode & 0x0F00) >> 8] = temp + 256
+            v[temp_vx] = temp + 256
             v[0xF] = 0
         else:
-            v[(opcode & 0x0F00) >> 8] = temp
+            v[temp_vx] = temp
             v[0xF] = 1
         pc += 2
     elif opcode & 0xF00F == 0x8006:
         #8XY6	Shifts VX right by one. VF is set to the value of the least significant bit of VX before the shift. -- CORRECT?
-        v[0xF] = v[(opcode & 0x0F00) >> 8] & 1
-        v[(opcode & 0x0F00) >> 8] = v[(opcode & 0x0F00) >> 8] >> 1
+        v[0xF] = v[temp_vx] & 1
+        v[temp_vx] = v[temp_vx] >> 1
     elif opcode & 0xF00F == 0x8007:
         #8XY7	Sets VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't. -- IF IT DOESN'T WORK CHECK FORUM POST
-        temp = v[(opcode & 0x00F0) >> 4] - v[(opcode & 0x0F00) >> 8]
+        temp = v[temp_vy] - v[temp_vx]
         if temp < 0:
-            v[(opcode & 0x0F00) >> 8] = temp + 256
+            v[temp_vx] = temp + 256
             v[0xF] = 0
         else:
-            v[(opcode & 0x0F00) >> 8] = temp
+            v[temp_vx] = temp
             v[0xF] = 1
         pc += 2
     elif opcode & 0xF00F == 0x800E:
         #8XYE	Shifts VX left by one. VF is set to the value of the most significant bit of VX before the shift. -- CORRECT?
-        v[0xF] = msb(v[(opcode & 0x0F00) >> 8])
-        v[(opcode & 0x0F00) >> 8] = v[(opcode & 0x0F00) >> 8] << 1
+        v[0xF] = msb(v[temp_vx])
+        v[temp_vx] = v[temp_vx] << 1
     elif opcode & 0xF00F == 0x9000:
         #9XY0	Skips the next instruction if VX doesn't equal VY.
-        if v[(opcode & 0x0F00) >> 8] != v[(opcode & 0x00F0) >> 4]:
+        if v[temp_vx] != v[temp_vy]:
             pc += 4
         else:
             pc += 2
@@ -159,15 +162,15 @@ def do_cycle():
         pc+=2
     elif opcode & 0xF000 == 0xC000:
         #CXNN	Sets VX to the result of a bitwise and operation on a random number and NN.
-        v[(opcode & 0x0F00) >> 8] = random.randint(0, 255) & (opcode & 0x00FF)
+        v[temp_vx] = random.randint(0, 255) & (opcode & 0x00FF)
         pc+=2
     elif opcode & 0xF000 == 0xD000:
         #DXYN	Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels.
         #print("Drawing sprite! I = {}".format(i))
-        co_x = v[(opcode & 0x0F00) >> 8]
-        co_y = v[(opcode & 0x00F0) >> 4]
-        #co_x = (opcode & 0x0F00) >> 8
-        #co_y = (opcode & 0x00F0) >> 4
+        co_x = v[temp_vx]
+        co_y = v[temp_vy]
+        #co_x = temp_vx
+        #co_y = temp_vy
         height = (opcode & 0x000F)
 
         v[0xF] = 0
@@ -191,35 +194,35 @@ def do_cycle():
         pc += 2
     elif opcode & 0xF0FF == 0xE09E:
         #EX9E	Skips the next instruction if the key stored in VX is pressed.
-        if key[(opcode & 0x0F00) >> 8] == 1:
+        if key[temp_vx] == 1:
             pc += 4
         else:
             pc += 2
     elif opcode & 0xF0FF == 0xE0A1:
         #EXA1	Skips the next instruction if the key stored in VX isn't pressed.
-        if key[(opcode & 0x0F00) >> 8] != 1:
+        if key[temp_vx] != 1:
             pc += 4
         else:
             pc += 2
     elif opcode & 0xF0FF == 0xF007:
         #FX07	Sets VX to the value of the delay timer.
-        v[(opcode & 0x0F00) >> 8] = delay_timer
+        v[temp_vx] = delay_timer
         pc += 2
     elif opcode & 0xF0FF == 0xF00A:
         #FX0A	A key press is awaited, and then stored in VX. -- HOW TO GET KEY
-        v[(opcode & 0x0F00) >> 8] = input("Enter key -> ")
+        v[temp_vx] = input("Enter key -> ")
         pc += 2
     elif opcode & 0xF0FF == 0xF015:
         #FX15	Sets the delay timer to VX.
-        delay_timer = v[(opcode & 0x0F00) >> 8]
+        delay_timer = v[temp_vx]
         pc += 2
     elif opcode & 0xF0FF == 0xF018:
         #FX18	Sets the sound timer to VX.
-        sound_timer = v[(opcode & 0x0F00) >> 8]
+        sound_timer = v[temp_vx]
         pc += 2
     elif opcode & 0xF0FF == 0xF01E:
         #FX1E	Adds VX to I.
-        i += v[(opcode & 0x0F00) >> 8]
+        i += v[temp_vx]
         pc += 2
     elif opcode & 0xF0FF == 0xF029:
         #FX29	Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font.
@@ -228,18 +231,18 @@ def do_cycle():
         pc += 2
     elif opcode & 0xF0FF == 0xF033:
         #FX33	Stores the binary-coded decimal representation of VX, with the most significant of three digits at the address in I, the middle digit at I plus 1, and the least significant digit at I plus 2.
-        memory[i] = v[(opcode & 0x0F00) >> 8] / 100
-        memory[i+1] = (v[(opcode & 0x0F00) >> 8] / 10) % 10
-        memory[i+2] = (v[(opcode & 0x0F00) >> 8] % 100) % 10
+        memory[i] = v[temp_vx] / 100
+        memory[i+1] = (v[temp_vx] / 10) % 10
+        memory[i+2] = (v[temp_vx] % 100) % 10
         pc += 2
     elif opcode & 0xF0FF == 0xF055:
         #Stores V0 to VX (including VX) in memory starting at address I.
-        for x in range(0, (opcode & 0x0F00) >> 8):
+        for x in range(0, temp_vx):
             memory[i+x] = v[x]
         pc += 2
     elif opcode & 0xF0FF == 0xF065:
         #FX65	Fills V0 to VX (including VX) with values from memory starting at address I.
-        for x in range(0, (opcode & 0x0F00) >> 8):
+        for x in range(0, temp_vx):
             v[x] = memory[i+x]
         pc += 2
     else:
