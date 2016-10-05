@@ -23,6 +23,9 @@ def load_rom(name = "PONG", pos = 0x200):
 
 #print(memory)
 
+def toBinary(n):
+    return ''.join(str(1 & int(n) >> i) for i in range(8)[::-1])
+
 def msb(n):
   ndx = 0
   while ( 1 < n ):
@@ -178,7 +181,7 @@ def do_cycle():
         for y in range(0, height):
             row = memory[i + y]
             for x in range(0,8):
-                try: pixel = int("{0:b}".format(row)[x])
+                try: pixel = int(toBinary(row)[x])
                 except: pixel = 0
 
                 #if pix == 1:
